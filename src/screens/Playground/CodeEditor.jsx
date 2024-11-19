@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
+import Chatbot from '../../components/Chatbot'; // Import Chatbot component
+import styled from 'styled-components';
 
 // Import themes
 import { githubDark, githubLight } from '@uiw/codemirror-theme-github';
@@ -20,6 +22,25 @@ import { python } from '@codemirror/lang-python';
 import { autocompletion, CompletionContext } from '@codemirror/autocomplete';
 import { indentUnit } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
+
+const CodeEditorContainer = styled.div`
+  position: relative;
+  height: 100%;
+`;
+
+const CodeHelpButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 10px 20px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000; /* Add this line to ensure it appears above other elements */
+`;
+
 
 const API_KEY = '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'; // Replace with your actual OpenAI API key
 
@@ -63,6 +84,7 @@ const fetchSuggestions = async (input) => {
 const CodeEditor = ({ currentLanguage, currentTheme, currentCode, setCurrentCode }) => {
   const [theme, setTheme] = useState(githubDark);
   const [language, setLanguage] = useState(javascript);
+  const [showChatbot, setShowChatbot] = useState(false); // State to toggle chatbot visibility
 
   useEffect(() => {
     if (currentLanguage === 'cpp') setLanguage(cpp);
@@ -86,62 +108,67 @@ const CodeEditor = ({ currentLanguage, currentTheme, currentCode, setCurrentCode
 
   let timeoutId;
   const getCompletion = async (context) => {
-    clearTimeout(timeoutId);  // Clear previous timeout
+    clearTimeout(timeoutId);
     timeoutId = setTimeout(async () => {
       const input = context.matchBefore(/\w*$/);
       if (!input) return null;
-  
+
       const suggestions = await fetchSuggestions(input.text);
       return {
         from: input.from,
         to: input.to,
         options: suggestions.map(suggestion => ({ label: suggestion, type: 'keyword' })),
       };
-    }, 500);  // Wait for 500ms after the user stops typing
+    }, 500);
   };
-  
 
   return (
-    <CodeMirror
-      value={currentCode}
-      height="100%"
-      theme={theme}
-      extensions={[
-        language,
-        indentUnit.of('        '),
-        EditorState.tabSize.of(8),
-        autocompletion({
-          override: [getCompletion],
-        }), // Enable autocompletion with custom fetch
-      ]}
-      onChange={(value) => setCurrentCode(value)}
-      basicSetup={{
-        lineNumbers: true,
-        highlightActiveLineGutter: true,
-        highlightSpecialChars: true,
-        history: true,
-        foldGutter: true,
-        drawSelection: true,
-        dropCursor: true,
-        allowMultipleSelections: true,
-        indentOnInput: true,
-        syntaxHighlighting: true,
-        bracketMatching: true,
-        closeBrackets: true,
-        autocompletion: true, // Enable autocompletion in basic setup
-        rectangularSelection: true,
-        crosshairCursor: true,
-        highlightActiveLine: true,
-        highlightSelectionMatches: true,
-        closeBracketsKeymap: true,
-        defaultKeymap: true,
-        searchKeymap: true,
-        historyKeymap: true,
-        foldKeymap: true,
-        completionKeymap: true,
-        lintKeymap: true,
-      }}
-    />
+    <CodeEditorContainer>
+      <CodeHelpButton onClick={() => setShowChatbot(!showChatbot)}>
+        CodeHelp
+      </CodeHelpButton>
+      {showChatbot && <Chatbot />} {/* Render the Chatbot component when showChatbot is true */}
+      <CodeMirror
+        value={currentCode}
+        height="100%"
+        theme={theme}
+        extensions={[
+          language,
+          indentUnit.of('        '),
+          EditorState.tabSize.of(8),
+          autocompletion({
+            override: [getCompletion],
+          }),
+        ]}
+        onChange={(value) => setCurrentCode(value)}
+        basicSetup={{
+          lineNumbers: true,
+          highlightActiveLineGutter: true,
+          highlightSpecialChars: true,
+          history: true,
+          foldGutter: true,
+          drawSelection: true,
+          dropCursor: true,
+          allowMultipleSelections: true,
+          indentOnInput: true,
+          syntaxHighlighting: true,
+          bracketMatching: true,
+          closeBrackets: true,
+          autocompletion: true,
+          rectangularSelection: true,
+          crosshairCursor: true,
+          highlightActiveLine: true,
+          highlightSelectionMatches: true,
+          closeBracketsKeymap: true,
+          defaultKeymap: true,
+          searchKeymap: true,
+          historyKeymap: true,
+          foldKeymap: true,
+          completionKeymap: true,
+          lintKeymap: true,
+        }}
+      />
+    </CodeEditorContainer>
   );
 };
 
